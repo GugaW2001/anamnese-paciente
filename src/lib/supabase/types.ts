@@ -486,13 +486,13 @@ export type Database = {
           dados_triagem: Json
           data_atendimento: string
           id: string
-          idade: number
+          idade: number | null
           motivo_exame: string
           nome_completo: string
           nome_tecnica: string | null
           registro_id: string
           status: string
-          telefone: string
+          telefone: string | null
         }
         Insert: {
           created_at?: string
@@ -500,13 +500,13 @@ export type Database = {
           dados_triagem?: Json
           data_atendimento: string
           id?: string
-          idade: number
+          idade?: number | null
           motivo_exame: string
           nome_completo: string
           nome_tecnica?: string | null
           registro_id: string
           status?: string
-          telefone: string
+          telefone?: string | null
         }
         Update: {
           created_at?: string
@@ -514,13 +514,13 @@ export type Database = {
           dados_triagem?: Json
           data_atendimento?: string
           id?: string
-          idade?: number
+          idade?: number | null
           motivo_exame?: string
           nome_completo?: string
           nome_tecnica?: string | null
           registro_id?: string
           status?: string
-          telefone?: string
+          telefone?: string | null
         }
         Relationships: []
       }
@@ -2044,9 +2044,9 @@ export const Constants = {
 //   id: uuid (not null, default: gen_random_uuid())
 //   registro_id: text (not null)
 //   nome_completo: text (not null)
-//   telefone: text (not null)
+//   telefone: text (nullable)
 //   data_atendimento: text (not null)
-//   idade: integer (not null)
+//   idade: integer (nullable)
 //   motivo_exame: text (not null)
 //   dados_triagem: jsonb (not null, default: '{}'::jsonb)
 //   dados_exame: text (nullable)
@@ -2390,6 +2390,8 @@ export const Constants = {
 //     USING: true
 //     WITH CHECK: true
 // Table: pacientes
+//   Policy "anon_insert" (INSERT, PERMISSIVE) roles={anon}
+//     WITH CHECK: true
 //   Policy "authenticated_insert" (INSERT, PERMISSIVE) roles={authenticated}
 //     WITH CHECK: true
 //   Policy "authenticated_select" (SELECT, PERMISSIVE) roles={authenticated}

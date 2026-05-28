@@ -1,22 +1,16 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { screeningSchema, ScreeningFormValues, stepFields, defaultValues } from '@/lib/schema'
+import { screeningSchema, ScreeningFormValues, stepsConfig, defaultValues } from '@/lib/schema'
 import { Form } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { CheckCircle2, ChevronLeft, ChevronRight, Save } from 'lucide-react'
-import { Step1 } from './Step1'
-import { Step2 } from './Step2'
-import { Step3 } from './Step3'
-import { Step4 } from './Step4'
-import { Step5 } from './Step5'
-import { Step6 } from './Step6'
-import { Step7 } from './Step7'
+import { CheckCircle2, ChevronLeft, ChevronRight, Save, RotateCcw } from 'lucide-react'
+import { RenderStep } from './FormSteps'
+import { ReviewStep } from './ReviewStep'
 import { toast } from 'sonner'
-
-const TOTAL_STEPS = 7
+import { supabase } from '@/lib/supabase/client'
 
 export function ScreeningForm() {
   const [step, setStep] = useState(0)
@@ -29,21 +23,40 @@ export function ScreeningForm() {
     mode: 'onChange',
   })
 
+  const TOTAL_STEPS = stepsConfig.length + 1
+
   const nextStep = async () => {
-    if (step < 6) {
-      const fields = stepFields[step]
-      const isValid = await form.trigger(fields as any, { shouldFocus: true })
+    if (step < stepsConfig.length) {
+      const currentStepConfig = stepsConfig[step]
+      const isValid = await form.trigger(currentStepConfig.name, { shouldFocus: true })
+
       if (isValid) {
-        setStep((s) => s + 1)
+        let next = step + 1
+        while (
+          next < stepsConfig.length &&
+          stepsConfig[next].condition &&
+          !stepsConfig[next].condition(form.getValues)
+        ) {
+          next++
+        }
+        setStep(next)
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
-        toast.error('Por favor, preencha todos os campos obrigatórios.')
+        toast.error('Por favor, preencha o campo corretamente para avançar.')
       }
     }
   }
 
   const prevStep = () => {
-    setStep((s) => Math.max(0, s - 1))
+    let prev = step - 1
+    while (
+      prev >= 0 &&
+      stepsConfig[prev].condition &&
+      !stepsConfig[prev].condition(form.getValues)
+    ) {
+      prev--
+    }
+    setStep(Math.max(0, prev))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -51,58 +64,40 @@ export function ScreeningForm() {
     setIsSubmitting(true)
     try {
       const payload = {
-        registro_id: `PAT-${Date.now()}`,
+        registro_id: `PAT-${Math.floor(Date.now() / 1000)}`,
         nome_completo: data.nome_completo,
-        telefone: data.telefone,
-        data_atendimento: data.data_atendimento,
         idade: data.idade,
+        data_atendimento: new Date().toISOString().split('T')[0],
         motivo_exame: data.motivo_exame,
         dados_triagem: {
-          historico_ginecologico: {
-            amamentou: data.amamentou,
-            idade_menarca: data.idade_menarca,
-            menopausa: data.menopausa,
-            idade_menopausa: data.idade_menopausa,
-          },
-          historico_obstetrico: {
-            numero_filhos: data.numero_filhos,
-            idade_primeiro_filho: data.idade_primeiro_filho,
-          },
-          historico_medico: {
-            medicacoes_atuais: data.medicacoes_atuais,
-            cirurgia_previa_mama: data.cirurgia_previa_mama,
-            motivo_cirurgia: data.motivo_cirurgia,
-            radioterapia: data.radioterapia,
-            periodo_radioterapia: data.periodo_radioterapia,
-            quimioterapia: data.quimioterapia,
-            periodo_quimioterapia: data.periodo_quimioterapia,
-            tabagismo: data.tabagismo,
-          },
-          historico_familiar: {
-            historico_familiar_cancer_mama: data.historico_familiar_cancer_mama,
-            grau_parentesco: data.grau_parentesco,
-          },
-          exames_anteriores: {
-            exames_anteriores: data.exames_anteriores,
-            observacoes: data.observacoes,
-          },
+          idade_menarca: data.idade_menarca,
+          menopausa: data.menopausa,
+          idade_menopausa: data.idade_menopausa,
+          cirurgia_previa_mama: data.cirurgia_previa_mama,
+          motivo_cirurgia: data.motivo_cirurgia,
+          radioterapia: data.radioterapia,
+          periodo_radioterapia: data.periodo_radioterapia,
+          braquiterapia: data.braquiterapia,
+          periodo_braquiterapia: data.periodo_braquiterapia,
+          quimioterapia: data.quimioterapia,
+          periodo_quimioterapia: data.periodo_quimioterapia,
+          medicacoes_atuais: data.medicacoes_atuais,
+          tabagismo: data.tabagismo,
+          historico_familiar_cancer_mama: data.historico_familiar_cancer_mama,
+          grau_parentesco: data.grau_parentesco,
+          exames_anteriores: data.exames_anteriores,
+          observacoes: data.observacoes,
         },
-        dados_exame: null,
-        nome_tecnica: null,
         status: 'pendente',
       }
 
-      // Simulate API call for direct DB insertion
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const { error } = await supabase.from('pacientes').insert([payload as any])
+      if (error) throw error
 
-      // Fallback local persistence
-      const records = JSON.parse(localStorage.getItem('pacientes') || '[]')
-      records.push(payload)
-      localStorage.setItem('pacientes', JSON.stringify(records))
-
-      toast.success('Registro salvo com sucesso no banco de dados!')
+      toast.success('Registro salvo com sucesso!')
       setIsSuccess(true)
     } catch (error) {
+      console.error(error)
       toast.error('Erro ao salvar os dados. Tente novamente.')
     } finally {
       setIsSubmitting(false)
@@ -117,13 +112,18 @@ export function ScreeningForm() {
 
   if (isSuccess) {
     return (
-      <Card className="max-w-2xl mx-auto mt-8 border-none shadow-lg text-center p-8 animate-slide-up">
-        <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6 animate-fade-in-up" />
-        <h2 className="text-3xl font-bold mb-4">Triagem Concluída!</h2>
-        <p className="text-muted-foreground mb-8">
+      <Card className="max-w-2xl mx-auto mt-8 border-none shadow-2xl text-center p-10 animate-slide-up rounded-3xl">
+        <CheckCircle2 className="w-28 h-28 text-green-500 mx-auto mb-8 animate-fade-in" />
+        <h2 className="text-4xl font-extrabold mb-4 text-primary">Triagem Concluída!</h2>
+        <p className="text-muted-foreground mb-10 text-xl max-w-md mx-auto">
           Os dados da paciente foram salvos com sucesso no sistema.
         </p>
-        <Button onClick={resetForm} size="lg" className="w-full sm:w-auto">
+        <Button
+          onClick={resetForm}
+          size="lg"
+          className="w-full sm:w-auto h-14 px-8 text-lg rounded-xl shadow-md"
+        >
+          <RotateCcw className="w-5 h-5 mr-2" />
           Iniciar Nova Triagem
         </Button>
       </Card>
@@ -133,59 +133,64 @@ export function ScreeningForm() {
   const progress = ((step + 1) / TOTAL_STEPS) * 100
 
   return (
-    <Card className="max-w-3xl mx-auto shadow-md border-muted/50 transition-all duration-300">
-      <CardHeader className="bg-muted/20 border-b border-muted">
-        <div className="flex justify-between items-center mb-4">
-          <CardTitle className="text-xl sm:text-2xl text-primary flex items-center gap-2">
+    <Card className="max-w-4xl mx-auto shadow-2xl border-border/30 transition-all duration-300 rounded-3xl overflow-hidden">
+      <CardHeader className="bg-muted/10 border-b border-border/50 p-6 sm:p-8">
+        <div className="flex justify-between items-center mb-6">
+          <CardTitle className="text-xl sm:text-2xl text-primary font-bold">
             Formulário de Triagem
           </CardTitle>
-          <span className="text-xs sm:text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+          <span className="text-sm font-bold text-primary/80 bg-primary/10 px-4 py-2 rounded-full tracking-wide">
             Passo {step + 1} de {TOTAL_STEPS}
           </span>
         </div>
-        <Progress value={progress} className="h-2 transition-all duration-500" />
+        <Progress
+          value={progress}
+          className="h-3 bg-muted/50 transition-all duration-500 rounded-full"
+        />
       </CardHeader>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="p-4 sm:p-6 min-h-[400px]">
-            {step === 0 && <Step1 control={form.control} />}
-            {step === 1 && <Step2 control={form.control} />}
-            {step === 2 && <Step3 control={form.control} />}
-            {step === 3 && <Step4 control={form.control} watch={form.watch} />}
-            {step === 4 && <Step5 control={form.control} watch={form.watch} />}
-            {step === 5 && <Step6 control={form.control} />}
-            {step === 6 && <Step7 form={form} setStep={setStep} />}
+          <CardContent className="p-6 sm:p-12 min-h-[500px] flex flex-col justify-center">
+            {step < stepsConfig.length ? (
+              <RenderStep step={step} control={form.control} />
+            ) : (
+              <ReviewStep form={form} setStep={setStep} />
+            )}
           </CardContent>
 
-          <CardFooter className="flex justify-between p-4 sm:p-6 bg-muted/10 border-t border-muted">
+          <CardFooter className="flex justify-between p-6 sm:px-12 sm:py-8 bg-muted/10 border-t border-border/50">
             <Button
               type="button"
               variant="outline"
               onClick={prevStep}
               disabled={step === 0 || isSubmitting}
-              className="w-28 sm:w-32"
+              className="w-32 sm:w-40 h-14 text-lg font-medium rounded-xl border-border hover:bg-muted/50"
             >
-              <ChevronLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <ChevronLeft className="w-5 h-5 mr-2" />
               Voltar
             </Button>
 
-            {step < TOTAL_STEPS - 1 ? (
-              <Button type="button" onClick={nextStep} className="w-28 sm:w-32">
+            {step < stepsConfig.length ? (
+              <Button
+                type="button"
+                onClick={nextStep}
+                className="w-32 sm:w-40 h-14 text-lg font-bold rounded-xl shadow-md"
+              >
                 Avançar
-                <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
+                <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
             ) : (
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-32 sm:w-40 bg-primary hover:bg-primary/90"
+                className="w-40 sm:w-48 h-14 text-lg font-bold bg-primary hover:bg-primary/90 rounded-xl shadow-md"
               >
                 {isSubmitting ? (
                   <span className="animate-pulse">Salvando...</span>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-1 sm:mr-2" />
+                    <Save className="w-5 h-5 mr-2" />
                     Finalizar
                   </>
                 )}
