@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  plugins: [mode === 'development' ? uidPlugin() : undefined, react()].filter(Boolean),
+  plugins: [react()],
   define: {
     'process.env.NODE_ENV': JSON.stringify(mode ?? process.env.NODE_ENV ?? 'production'),
   },

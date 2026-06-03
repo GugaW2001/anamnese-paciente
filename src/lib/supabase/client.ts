@@ -8,8 +8,10 @@ declare global {
 }
 
 function getEnvVar(key: string): string {
+  const metaVal = import.meta.env[key as keyof ImportMeta['env']] as string | undefined
+  if (metaVal) return metaVal
   const env = window.__ENV__ ?? {}
-  return env[key] || (import.meta.env[key as keyof ImportMeta['env']] as string) || ''
+  return env[key] || ''
 }
 
 const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL')
