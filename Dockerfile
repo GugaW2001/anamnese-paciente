@@ -12,9 +12,9 @@ RUN pnpm build
 FROM nginx:alpine
 RUN apk add --no-cache gettext
 COPY --from=builder /app/dist /usr/share/nginx/html
+RUN mv /usr/share/nginx/html/index.html /usr/share/nginx/html/index.html.template
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY env.js.template /usr/share/nginx/html/env.js.template
-COPY 40-env-js.sh /docker-entrypoint.d/40-env-js.sh
-RUN chmod +x /docker-entrypoint.d/40-env-js.sh
+COPY 50-env-html.sh /docker-entrypoint.d/50-env-html.sh
+RUN chmod +x /docker-entrypoint.d/50-env-html.sh
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
