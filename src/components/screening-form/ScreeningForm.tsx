@@ -70,6 +70,7 @@ export function ScreeningForm() {
         data_atendimento: new Date().toISOString().split('T')[0],
         motivo_exame: data.motivo_exame,
         dados_triagem: {
+          data_nascimento: data.data_nascimento,
           idade_menarca: data.idade_menarca,
           menopausa: data.menopausa,
           idade_menopausa: data.idade_menopausa,

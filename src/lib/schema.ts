@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const screeningSchema = z.object({
   nome_completo: z.string().min(3, 'Nome é obrigatório'),
+  data_nascimento: z.string().min(1, 'Data de nascimento é obrigatória'),
   idade: z.coerce.number({ invalid_type_error: 'Idade inválida' }).min(1, 'Idade é obrigatória'),
   motivo_exame: z.string().min(3, 'Motivo é obrigatório'),
 
@@ -32,6 +33,7 @@ export type ScreeningFormValues = z.infer<typeof screeningSchema>
 
 export const defaultValues: Partial<ScreeningFormValues> = {
   nome_completo: '',
+  data_nascimento: '',
   idade: undefined,
   motivo_exame: '',
   idade_menarca: '',
@@ -56,7 +58,7 @@ export const defaultValues: Partial<ScreeningFormValues> = {
 export type FieldConfig = {
   name: keyof ScreeningFormValues
   label: string
-  type: 'text' | 'number' | 'radio' | 'textarea'
+  type: 'text' | 'number' | 'radio' | 'textarea' | 'date'
   placeholder?: string
   condition?: (getValues: any) => boolean
 }
@@ -67,6 +69,12 @@ export const stepsConfig: FieldConfig[] = [
     label: 'Qual o nome completo da paciente?',
     type: 'text',
     placeholder: 'Ex: Maria da Silva',
+  },
+  {
+    name: 'data_nascimento',
+    label: 'Qual a data de nascimento da paciente?',
+    type: 'date',
+    placeholder: 'Ex: 15/03/1978',
   },
   { name: 'idade', label: 'Qual a idade da paciente?', type: 'number', placeholder: 'Ex: 45' },
   {

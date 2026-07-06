@@ -52,6 +52,7 @@ export function ReviewStep({
       <div className="bg-muted/30 rounded-2xl p-6 sm:p-8 border border-border/50 shadow-sm">
         <Section title="Dados da Paciente" stepIndex={0}>
           <Item label="Nome Completo" value={values.nome_completo} />
+          <Item label="Data de Nascimento" value={values.data_nascimento} />
           <Item label="Idade" value={values.idade} />
           <Item label="Motivo do Exame" value={values.motivo_exame} />
         </Section>
