@@ -3,6 +3,16 @@ import { ScreeningFormValues } from '@/lib/schema'
 import { Button } from '@/components/ui/button'
 import { Pencil } from 'lucide-react'
 
+function calcularIdade(dataNascimento: string): number {
+  if (!dataNascimento) return 0
+  const hoje = new Date()
+  const nasc = new Date(dataNascimento)
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const diffMeses = hoje.getMonth() - nasc.getMonth()
+  if (diffMeses < 0 || (diffMeses === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
+}
+
 export function ReviewStep({
   form,
   setStep,
@@ -53,7 +63,7 @@ export function ReviewStep({
         <Section title="Dados da Paciente" stepIndex={0}>
           <Item label="Nome Completo" value={values.nome_completo} />
           <Item label="Data de Nascimento" value={values.data_nascimento} />
-          <Item label="Idade" value={values.idade} />
+          <Item label="Idade" value={calcularIdade(values.data_nascimento)} />
           <Item label="Motivo do Exame" value={values.motivo_exame} />
         </Section>
 

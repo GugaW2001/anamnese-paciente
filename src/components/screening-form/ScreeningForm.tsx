@@ -12,6 +12,16 @@ import { ReviewStep } from './ReviewStep'
 import { toast } from 'sonner'
 import { getSupabase } from '@/lib/supabase/client'
 
+function calcularIdade(dataNascimento: string): number {
+  if (!dataNascimento) return 0
+  const hoje = new Date()
+  const nasc = new Date(dataNascimento)
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const diffMeses = hoje.getMonth() - nasc.getMonth()
+  if (diffMeses < 0 || (diffMeses === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
+}
+
 export function ScreeningForm() {
   const [step, setStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -66,7 +76,7 @@ export function ScreeningForm() {
       const payload = {
         registro_id: `PAT-${Math.floor(Date.now() / 1000)}`,
         nome_completo: data.nome_completo,
-        idade: data.idade,
+        idade: calcularIdade(data.data_nascimento),
         data_atendimento: new Date().toISOString().split('T')[0],
         motivo_exame: data.motivo_exame,
         dados_triagem: {
